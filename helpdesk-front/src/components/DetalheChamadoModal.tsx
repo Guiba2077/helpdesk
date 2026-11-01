@@ -5,6 +5,7 @@ import {
   buscarChamado,
   criarApontamento,
   fecharChamado,
+  inativarChamado,
   historicoChamado,
   listarApontamentos,
 } from '../api/chamadosApi'
@@ -19,6 +20,7 @@ import type {
 } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import Alerta from './Alerta'
+import EditarChamadoModal from './EditarChamadoModal'
 import Modal from './Modal'
 
 const PRIORIDADES: Prioridade[] = ['BAIXA', 'MEDIA', 'ALTA', 'CRITICA']
@@ -49,6 +51,7 @@ export default function DetalheChamadoModal({
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([])
   const [erro, setErro] = useState('')
   const [ocupado, setOcupado] = useState(false)
+  const [editando, setEditando] = useState(false)
 
   const [tecnicoId, setTecnicoId] = useState('')
   const [novaPrioridade, setNovaPrioridade] = useState<Prioridade>('MEDIA')
@@ -97,6 +100,22 @@ export default function DetalheChamadoModal({
   }
 
   const fechado = chamado?.status === 'FECHADO'
+  const podeEditar =
+    !!chamado && !fechado && (ehAdmin || chamado.solicitanteId === usuario?.id)
+
+  async function inativar() {
+    if (!window.confirm('Inativar este chamado? Ele sai da fila.')) return
+    setErro('')
+    setOcupado(true)
+    try {
+      await inativarChamado(id)
+      onAlterado()
+      onClose()
+    } catch (e) {
+      setErro(e instanceof ApiError ? e.message : 'Falha na operacao.')
+      setOcupado(false)
+    }
+  }
 
   return (
     <Modal
@@ -118,6 +137,28 @@ export default function DetalheChamadoModal({
             <p>Aberto em: <b>{data(chamado.dataAbertura)}</b></p>
             <p className="col-span-2 text-slate-600">{chamado.descricao}</p>
           </section>
+
+          {(podeEditar || ehAdmin) && (
+            <section className="flex flex-wrap gap-2">
+              {podeEditar && (
+                <button
+                  onClick={() => setEditando(true)}
+                  className="rounded border border-line bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-surface"
+                >
+                  Editar chamado
+                </button>
+              )}
+              {ehAdmin && (
+                <button
+                  disabled={ocupado}
+                  onClick={inativar}
+                  className="rounded border border-red-200 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+                >
+                  Inativar chamado
+                </button>
+              )}
+            </section>
+          )}
 
           {ehAdmin && !fechado && (
             <section className="space-y-3 rounded bg-slate-50 p-3">
@@ -246,6 +287,16 @@ export default function DetalheChamadoModal({
             </section>
           )}
         </div>
+      )}
+      {editando && chamado && (
+        <EditarChamadoModal
+          chamado={chamado}
+          onClose={() => setEditando(false)}
+          onSalvo={() => {
+            carregar()
+            onAlterado()
+          }}
+        />
       )}
     </Modal>
   )

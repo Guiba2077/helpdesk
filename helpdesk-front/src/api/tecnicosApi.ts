@@ -20,3 +20,16 @@ export const criarTecnico = (b: NovoTecnico) =>
 // O back inverte o valor atual (sem corpo) e so o ADMIN pode usar.
 export const alternarDisponibilidade = (id: number) =>
   apiRequest<Tecnico>(`/tecnicos/${id}/disponibilidade`, { method: 'PATCH' })
+
+export interface NovaEspecialidade {
+  codigo: string
+  nome: string
+  nivelPadrao: NivelAtendimento
+  descricao?: string
+}
+
+export const criarEspecialidade = (b: NovaEspecialidade) =>
+  apiRequest<Especialidade>('/tecnicos/especialidades', {
+    method: 'POST',
+    body: JSON.stringify(b),
+  })
