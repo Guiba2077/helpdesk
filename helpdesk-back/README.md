@@ -75,18 +75,23 @@ helpdesk-back/
 
 ---
 
-## 4. Pré-Requisitos para Executar
+## 4. Pré-Requisitos e Integração com o Banco de Dados
 
-Antes de iniciar o Back-End, certifique-se de possuir:
+Como o Back-End consome recursos e privilégios específicos do **PostgreSQL 16+**, a pessoa responsável pelo banco de dados precisa garantir que a instância do PostgreSQL esteja acessível com as seguintes configurações:
 
-1. **Java JDK 21+** instalado e configurado na variável de ambiente `JAVA_HOME`.
-2. **PostgreSQL 16+** ativo na porta `5432` com o banco `helpdesk` criado e o script `bd/backup.sql` executado.
+1. **Java JDK 21+** instalado na máquina onde o Back-End será executado (e configurado na variável de ambiente `JAVA_HOME`).
+2. **Instância do PostgreSQL 16+** ativa (padrão: `localhost:5432`) com um banco de dados chamado `helpdesk`.
+3. **Credenciais das Roles do Back-End** configuradas no PostgreSQL:
+   - **Usuário de Escrita / DML:** `usr_helpdesk_escritor` (Senha: `escritor123`) com privilégios nas tabelas e sequências do schema `app` e execução de procedures.
+   - **Usuário de Leitura / Relatórios:** `usr_helpdesk_leitor` (Senha: `leitor123`) com privilégios de `SELECT` nos schemas `app` e `audit`.
 
-> [!TIP]
-> Para criar e carregar o banco de dados localmente com 1 clique, execute na raiz do projeto:
-> ```powershell
-> .\bd\setup-banco.ps1
-> ```
+> [!NOTE]
+> Caso a pessoa do banco utilize credenciais ou hosts diferentes do padrão, basta informar via variáveis de ambiente ao iniciar a aplicação ou ajustar no arquivo `application.properties`:
+> - `DB_URL` (padrão: `jdbc:postgresql://localhost:5432/helpdesk`)
+> - `DB_USER_ESCRITOR` (padrão: `usr_helpdesk_escritor`)
+> - `DB_PASS_ESCRITOR` (padrão: `escritor123`)
+> - `DB_USER_LEITOR` (padrão: `usr_helpdesk_leitor`)
+> - `DB_PASS_LEITOR` (padrão: `leitor123`)
 
 ---
 
