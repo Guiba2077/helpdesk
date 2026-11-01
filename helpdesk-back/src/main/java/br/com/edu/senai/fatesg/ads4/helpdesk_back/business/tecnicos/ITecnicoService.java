@@ -9,6 +9,8 @@ public interface ITecnicoService extends IGenericService<TecnicoDTO> {
 
     List<EspecialidadeDTO> listarEspecialidades();
 
+    EspecialidadeDTO cadastrarEspecialidade(String codigo, String nome, String nivelPadrao, String descricao);
+
     TecnicoDTO salvar(TecnicoModel model);
 
     TecnicoDTO atualizar(Long id, TecnicoModel model);

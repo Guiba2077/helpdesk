@@ -1,6 +1,7 @@
 package br.com.edu.senai.fatesg.ads4.helpdesk_back.business.tecnicos;
 
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.exceptions.EntidadeNaoEncontradaException;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.exceptions.NegocioException;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.services.GenericService;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,20 @@ public class TecnicoService extends GenericService<TecnicoModel, TecnicoDTO, ITe
         return repository.listarEspecialidades().stream()
                 .map(e -> new EspecialidadeDTO(e.getCodigo(), e.getNome(), e.getNivelAtendimento()))
                 .toList();
+    }
+
+    @Override
+    @Transactional
+    public EspecialidadeDTO cadastrarEspecialidade(String codigo, String nome, String nivelPadrao, String descricao) {
+        if (codigo == null || codigo.isBlank()) {
+            throw new NegocioException("O código da especialidade é obrigatório (ex: CLOUD_AWS).");
+        }
+        if (nome == null || nome.isBlank()) {
+            throw new NegocioException("O nome da especialidade é obrigatório.");
+        }
+        Especialidade esp = new Especialidade(codigo.trim().toUpperCase(), nome.trim(), nivelPadrao != null ? nivelPadrao.trim().toUpperCase() : "N1");
+        Especialidade salva = repository.cadastrarEspecialidade(esp);
+        return new EspecialidadeDTO(salva.getCodigo(), salva.getNome(), salva.getNivelAtendimento());
     }
 
     @Override

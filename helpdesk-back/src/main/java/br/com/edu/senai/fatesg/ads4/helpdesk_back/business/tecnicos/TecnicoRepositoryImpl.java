@@ -17,10 +17,15 @@ public class TecnicoRepositoryImpl implements ITecnicoRepository {
 
     private final TecnicoJpaRepository jpa;
     private final UsuarioJpaRepository usuarioJpa;
+    private final EspecialidadeJpaRepository especialidadeJpa;
 
-    public TecnicoRepositoryImpl(TecnicoJpaRepository jpa, UsuarioJpaRepository usuarioJpa) {
+    public TecnicoRepositoryImpl(
+            TecnicoJpaRepository jpa,
+            UsuarioJpaRepository usuarioJpa,
+            EspecialidadeJpaRepository especialidadeJpa) {
         this.jpa = jpa;
         this.usuarioJpa = usuarioJpa;
+        this.especialidadeJpa = especialidadeJpa;
     }
 
     private void enriquecerComUsuario(TecnicoModel tecnico) {
@@ -80,12 +85,22 @@ public class TecnicoRepositoryImpl implements ITecnicoRepository {
 
     @Override
     public List<Especialidade> listarEspecialidades() {
-        return List.of(
-                new Especialidade("DBA_POSTGRES", "Administrador de Banco de Dados", "N3"),
-                new Especialidade("INFRA_REDE", "Infraestrutura de Redes e Conectividade", "N2"),
-                new Especialidade("SUPORTE_SISTEMAS", "Suporte a Softwares Corporativos e ERP", "N1"),
-                new Especialidade("SEGURANCA_TI", "Segurança da Informação e Acessos", "N3")
-        );
+        return especialidadeJpa.findAllByAtivoTrueOrderByNomeAsc().stream()
+                .map(e -> new Especialidade(e.getCodigo(), e.getNome(), e.getNivelPadrao()))
+                .toList();
+    }
+
+    @Override
+    @Transactional
+    public Especialidade cadastrarEspecialidade(Especialidade esp) {
+        EspecialidadeModel model = EspecialidadeModel.builder()
+                .codigo(esp.getCodigo().toUpperCase().trim())
+                .nome(esp.getNome().trim())
+                .nivelPadrao(esp.getNivelAtendimento() != null ? esp.getNivelAtendimento().toUpperCase().trim() : "N1")
+                .ativo(true)
+                .build();
+        EspecialidadeModel salvo = especialidadeJpa.save(model);
+        return new Especialidade(salvo.getCodigo(), salvo.getNome(), salvo.getNivelPadrao());
     }
 
     @Override

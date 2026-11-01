@@ -59,9 +59,26 @@ public class TecnicoController extends GenericController<TecnicoDTO> {
         return ResponseEntity.ok(service.listarDisponiveis());
     }
 
+    public record CriarEspecialidadeRequest(
+            @NotBlank(message = "O código é obrigatório (ex: CLOUD_AWS)") String codigo,
+            @NotBlank(message = "O nome é obrigatório") String nome,
+            String nivelPadrao,
+            String descricao) {
+    }
+
     @GetMapping("/especialidades")
     public ResponseEntity<List<EspecialidadeDTO>> listarEspecialidades() {
         return ResponseEntity.ok(service.listarEspecialidades());
+    }
+
+    @PostMapping("/especialidades")
+    public ResponseEntity<EspecialidadeDTO> cadastrarEspecialidade(
+            @Valid @RequestBody CriarEspecialidadeRequest request,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
+        EspecialidadeDTO salva = service.cadastrarEspecialidade(
+                request.codigo(), request.nome(), request.nivelPadrao(), request.descricao());
+        return ResponseEntity.status(HttpStatus.CREATED).body(salva);
     }
 
     @PostMapping

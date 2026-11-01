@@ -9,6 +9,8 @@ public interface ITecnicoRepository extends Repository<TecnicoModel> {
 
     List<Especialidade> listarEspecialidades();
 
+    Especialidade cadastrarEspecialidade(Especialidade especialidade);
+
     void alternarDisponibilidade(Long id);
 }
 
