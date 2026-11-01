@@ -48,6 +48,10 @@ public abstract class ChamadoTemplate {
         if (statusAtual == StatusChamado.FECHADO) {
             throw new NegocioException("Este chamado já se encontra FECHADO.");
         }
+        if (statusAtual != StatusChamado.ATENDIMENTO) {
+            throw new NegocioException(
+                    "O chamado precisa estar em status ATENDIMENTO e possuir um técnico alocado antes de ser encerrado.");
+        }
         if (solucao == null || solucao.trim().isEmpty()) {
             throw new NegocioException("É obrigatório informar a descrição da solução técnica para encerrar o chamado.");
         }

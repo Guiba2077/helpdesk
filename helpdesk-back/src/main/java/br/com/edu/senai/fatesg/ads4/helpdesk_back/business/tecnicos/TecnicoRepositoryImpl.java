@@ -77,6 +77,13 @@ public class TecnicoRepositoryImpl implements ITecnicoRepository {
     }
 
     @Override
+    public Optional<TecnicoModel> buscarPorUsuarioId(Long usuarioId) {
+        Optional<TecnicoModel> opt = jpa.findByUsuarioId(usuarioId);
+        opt.ifPresent(this::enriquecerComUsuario);
+        return opt;
+    }
+
+    @Override
     public List<TecnicoModel> listarDisponiveis() {
         List<TecnicoModel> lista = jpa.findDisponiveis();
         enriquecerLista(lista);

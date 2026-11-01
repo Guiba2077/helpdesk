@@ -19,6 +19,8 @@ public interface TecnicoJpaRepository extends JpaRepository<TecnicoModel, Long> 
 
     List<TecnicoModel> findByAtivoTrueOrderById();
 
+    java.util.Optional<TecnicoModel> findByUsuarioId(Long usuarioId);
+
     List<TecnicoModel> findAllByOrderById();
 
     @Modifying

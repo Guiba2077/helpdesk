@@ -36,9 +36,11 @@ public class TecnicoModel extends BaseModel {
     @Column(name = "disponivel", nullable = false)
     private boolean disponivel = true;
 
+    @Builder.Default
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
+    @Builder.Default
     @Column(name = "criado_em", nullable = false)
     private java.time.LocalDateTime criadoEm = java.time.LocalDateTime.now();
 

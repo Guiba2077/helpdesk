@@ -59,9 +59,27 @@ public class ChamadoController extends GenericController<ChamadoDTO> {
             Long autorId) {
     }
 
+    @Override
+    @GetMapping
+    public ResponseEntity<List<ChamadoDTO>> listar(
+            @org.springframework.web.bind.annotation.RequestParam(name = "incluirInativos", defaultValue = "false") boolean incluirInativos) {
+        return ResponseEntity.ok(service.listarTodos(incluirInativos));
+    }
+
+    @GetMapping(headers = "X-Usuario-Id")
+    public ResponseEntity<List<ChamadoDTO>> listarPorUsuario(
+            @org.springframework.web.bind.annotation.RequestParam(name = "incluirInativos", defaultValue = "false") boolean incluirInativos,
+            @RequestHeader(name = "X-Usuario-Id") Long usuarioLogadoId) {
+        return ResponseEntity.ok(service.listarChamadosPorUsuario(usuarioLogadoId, incluirInativos));
+    }
+
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<ChamadoDTO>> buscarPorStatus(@PathVariable String status) {
-        return ResponseEntity.ok(service.buscarPorStatus(status));
+    public ResponseEntity<List<ChamadoDTO>> buscarPorStatus(
+            @PathVariable String status,
+            @RequestHeader(name = "X-Usuario-Id", required = false) Long usuarioLogadoId) {
+        return ResponseEntity.ok(usuarioLogadoId != null
+                ? service.buscarPorStatus(status, usuarioLogadoId)
+                : service.buscarPorStatus(status));
     }
 
     @GetMapping("/dashboard/resumo")

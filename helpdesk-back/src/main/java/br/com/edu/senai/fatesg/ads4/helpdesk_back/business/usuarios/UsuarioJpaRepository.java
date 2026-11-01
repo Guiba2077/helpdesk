@@ -28,7 +28,6 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioModel, Long> 
     @Query("SELECT u FROM UsuarioModel u WHERE LOWER(u.nome) LIKE LOWER(CONCAT('%', :nome, '%')) ORDER BY u.nome")
     List<UsuarioModel> buscarPorNome(@Param("nome") String nome);
 
-    @Modifying
     @Query(value = """
             INSERT INTO app.usuario (nome, email, senha_hash, telefone, setor, perfil, ativo, criado_em, atualizado_em)
             VALUES (:nome, :email, crypt(:senha, gen_salt('bf')), :telefone, :setor, :perfil, true, now(), now())

@@ -15,7 +15,11 @@ public interface IChamadoService extends IGenericService<ChamadoDTO> {
 
     ChamadoDTO encerrarChamado(Long chamadoId, String solucao, Long usuarioLogadoId);
 
+    List<ChamadoDTO> listarChamadosPorUsuario(Long usuarioLogadoId, boolean incluirInativos);
+
     List<ChamadoDTO> buscarPorStatus(String status);
+
+    List<ChamadoDTO> buscarPorStatus(String status, Long usuarioLogadoId);
 
     List<HistoricoChamadoDTO> listarHistorico(Long chamadoId);
 

@@ -7,6 +7,8 @@ public interface ITecnicoRepository extends Repository<TecnicoModel> {
 
     List<TecnicoModel> listarDisponiveis();
 
+    java.util.Optional<TecnicoModel> buscarPorUsuarioId(Long usuarioId);
+
     List<Especialidade> listarEspecialidades();
 
     Especialidade cadastrarEspecialidade(Especialidade especialidade);

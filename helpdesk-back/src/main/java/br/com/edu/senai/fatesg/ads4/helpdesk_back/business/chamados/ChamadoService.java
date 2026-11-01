@@ -1,5 +1,7 @@
 package br.com.edu.senai.fatesg.ads4.helpdesk_back.business.chamados;
 
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.tecnicos.ITecnicoRepository;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.tecnicos.TecnicoModel;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.IUsuarioRepository;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.PerfilUsuario;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.Usuario;
@@ -21,6 +23,7 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
     private final ChamadoMapper mapper;
     private final IChamadoValidation validation;
     private final IUsuarioRepository usuarioRepository;
+    private final ITecnicoRepository tecnicoRepository;
     private final SessionContextManager sessionContextManager;
 
     public ChamadoService(
@@ -28,11 +31,13 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
             ChamadoMapper mapper,
             IChamadoValidation validation,
             IUsuarioRepository usuarioRepository,
+            ITecnicoRepository tecnicoRepository,
             SessionContextManager sessionContextManager) {
         super(repository);
         this.mapper = mapper;
         this.validation = validation;
         this.usuarioRepository = usuarioRepository;
+        this.tecnicoRepository = tecnicoRepository;
         this.sessionContextManager = sessionContextManager;
     }
 
@@ -88,13 +93,25 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
         Usuario usuario = obterUsuarioAtivo(usuarioLogadoId);
         ChamadoModel existente = repository.buscarPorId(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Chamado não encontrado com ID: " + id));
-        model.setId(existente.getId());
-        if (model.getSolicitanteId() == null) {
-            model.setSolicitanteId(existente.getSolicitanteId());
+        // Regra de Permissão: apenas ADMIN ou o próprio solicitante editam o chamado
+        if (!usuario.isAdmin() && !usuario.getId().equals(existente.getSolicitanteId())) {
+            throw new NegocioException(
+                    "Acesso negado: Apenas o solicitante ou um ADMIN podem editar este chamado.");
         }
-        validation.validar(model);
+        if ("FECHADO".equalsIgnoreCase(existente.getStatus())) {
+            throw new NegocioException("Chamados fechados não podem ser editados.");
+        }
+        // Copia somente os campos editáveis para o registro existente, preservando
+        // protocolo, status, prioridade, técnico, solução e datas.
+        existente.setTitulo(model.getTitulo());
+        existente.setDescricao(model.getDescricao());
+        if (model.getCategoria() != null && !model.getCategoria().isBlank()) {
+            existente.setCategoria(model.getCategoria());
+        }
+        existente.setAtualizadoEm(java.time.LocalDateTime.now());
+        validation.validar(existente);
         sessionContextManager.definirContextoUsuario(usuario.getId(), usuario.getPerfil().name());
-        repository.atualizar(model);
+        repository.atualizar(existente);
         return buscarPorId(id);
     }
 
@@ -168,6 +185,16 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
         ChamadoModel chamado = repository.buscarPorId(chamadoId)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Chamado não encontrado com ID: " + chamadoId));
 
+        // Regra de Permissão: Se for perfil TECNICO, só pode encerrar chamado alocado para ele mesmo
+        if (usuario.isTecnico()) {
+            TecnicoModel tecnicoLogado = tecnicoRepository.buscarPorUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new NegocioException("Cadastro de técnico não localizado para o usuário logado."));
+            if (chamado.getTecnicoId() == null || !chamado.getTecnicoId().equals(tecnicoLogado.getId())) {
+                throw new NegocioException(
+                        "Acesso negado: Você só pode encerrar chamados atribuídos diretamente ao seu atendimento.");
+            }
+        }
+
         ChamadoTemplate.validarEEncerrar(chamado, solucao);
         sessionContextManager.definirContextoUsuario(usuario.getId(), usuario.getPerfil().name());
 
@@ -179,15 +206,55 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
 
     @Override
     @Transactional(readOnly = true)
+    public List<ChamadoDTO> listarChamadosPorUsuario(Long usuarioLogadoId, boolean incluirInativos) {
+        Usuario usuario = obterUsuarioAtivo(usuarioLogadoId);
+        List<ChamadoModel> base = incluirInativos
+                ? repository.listarTodosIncluindoInativos()
+                : repository.listarTodos();
+
+        return filtrarPorPerfil(base, usuario).stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ChamadoDTO> buscarPorStatus(String status) {
+        return buscarPorStatus(status, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ChamadoDTO> buscarPorStatus(String status, Long usuarioLogadoId) {
+        Usuario usuario = usuarioLogadoId != null ? obterUsuarioAtivo(usuarioLogadoId) : null;
         StatusChamado filtro = StatusChamado.fromString(status);
         List<ChamadoModel> todos = repository.listarTodos();
-        ChamadoIterator iterator = new ChamadoIterator(todos, filtro);
+
+        List<ChamadoModel> filtradosPorPerfil = (usuario != null)
+                ? filtrarPorPerfil(todos, usuario)
+                : todos;
+
+        ChamadoIterator iterator = new ChamadoIterator(filtradosPorPerfil, filtro);
         List<ChamadoDTO> filtrados = new ArrayList<>();
         while (iterator.hasNext()) {
             filtrados.add(toDTO(iterator.next()));
         }
         return filtrados;
+    }
+
+    private List<ChamadoModel> filtrarPorPerfil(List<ChamadoModel> lista, Usuario usuario) {
+        if (usuario.isAdmin()) {
+            return lista;
+        }
+        if (usuario.isTecnico()) {
+            return tecnicoRepository.buscarPorUsuarioId(usuario.getId())
+                    .map(t -> lista.stream()
+                            .filter(c -> c.getTecnicoId() != null && c.getTecnicoId().equals(t.getId()))
+                            .toList())
+                    .orElse(List.of());
+        }
+        // OPERADOR vê apenas chamados abertos por ele
+        return lista.stream()
+                .filter(c -> c.getSolicitanteId() != null && c.getSolicitanteId().equals(usuario.getId()))
+                .toList();
     }
 
     @Override

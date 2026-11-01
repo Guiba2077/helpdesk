@@ -48,6 +48,7 @@ public class ChamadoModel extends BaseModel {
     @Column(name = "solucao", columnDefinition = "TEXT")
     private String solucao;
 
+    @Builder.Default
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
