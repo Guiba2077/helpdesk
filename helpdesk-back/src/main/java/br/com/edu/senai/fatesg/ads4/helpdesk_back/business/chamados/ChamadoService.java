@@ -88,13 +88,25 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
         Usuario usuario = obterUsuarioAtivo(usuarioLogadoId);
         ChamadoModel existente = repository.buscarPorId(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Chamado não encontrado com ID: " + id));
-        model.setId(existente.getId());
-        if (model.getSolicitanteId() == null) {
-            model.setSolicitanteId(existente.getSolicitanteId());
+        // Regra de Permissão: apenas ADMIN ou o próprio solicitante editam o chamado
+        if (!usuario.isAdmin() && !usuario.getId().equals(existente.getSolicitanteId())) {
+            throw new NegocioException(
+                    "Acesso negado: Apenas o solicitante ou um ADMIN podem editar este chamado.");
         }
-        validation.validar(model);
+        if ("FECHADO".equalsIgnoreCase(existente.getStatus())) {
+            throw new NegocioException("Chamados fechados não podem ser editados.");
+        }
+        // Copia somente os campos editáveis para o registro existente, preservando
+        // protocolo, status, prioridade, técnico, solução e datas.
+        existente.setTitulo(model.getTitulo());
+        existente.setDescricao(model.getDescricao());
+        if (model.getCategoria() != null && !model.getCategoria().isBlank()) {
+            existente.setCategoria(model.getCategoria());
+        }
+        existente.setAtualizadoEm(java.time.LocalDateTime.now());
+        validation.validar(existente);
         sessionContextManager.definirContextoUsuario(usuario.getId(), usuario.getPerfil().name());
-        repository.atualizar(model);
+        repository.atualizar(existente);
         return buscarPorId(id);
     }
 

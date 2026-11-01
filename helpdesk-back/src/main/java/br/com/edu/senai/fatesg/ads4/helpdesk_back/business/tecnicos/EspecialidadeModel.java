@@ -31,9 +31,11 @@ public class EspecialidadeModel extends BaseModel {
     @Column(name = "descricao")
     private String descricao;
 
+    @Builder.Default
     @Column(name = "ativo", nullable = false)
     private boolean ativo = true;
 
+    @Builder.Default
     @Column(name = "criado_em", nullable = false)
     private java.time.LocalDateTime criadoEm = java.time.LocalDateTime.now();
 }
