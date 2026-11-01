@@ -12,5 +12,7 @@ public interface ITecnicoService extends IGenericService<TecnicoDTO> {
     TecnicoDTO salvar(TecnicoModel model);
 
     TecnicoDTO atualizar(Long id, TecnicoModel model);
+
+    TecnicoDTO alternarDisponibilidade(Long id);
 }
 

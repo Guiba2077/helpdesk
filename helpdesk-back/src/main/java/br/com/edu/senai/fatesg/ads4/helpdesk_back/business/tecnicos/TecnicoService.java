@@ -61,5 +61,14 @@ public class TecnicoService extends GenericService<TecnicoModel, TecnicoDTO, ITe
             return buscarPorId(id);
         });
     }
+
+    @Override
+    @Transactional
+    public TecnicoDTO alternarDisponibilidade(Long id) {
+        repository.buscarPorId(id)
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Técnico não encontrado com ID: " + id));
+        repository.alternarDisponibilidade(id);
+        return buscarPorId(id);
+    }
 }
 

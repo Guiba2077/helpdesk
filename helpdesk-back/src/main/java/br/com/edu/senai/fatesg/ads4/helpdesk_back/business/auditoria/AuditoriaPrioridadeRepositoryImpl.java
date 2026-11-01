@@ -1,67 +1,64 @@
 package br.com.edu.senai.fatesg.ads4.helpdesk_back.business.auditoria;
 
-import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.exceptions.NegocioException;
-import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.repositories.AbstractRepository;
-import java.sql.Timestamp;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.UsuarioJpaRepository;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.UsuarioModel;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Repository;
 
-/**
- * Repositório de leitura da trilha de auditoria no schema "audit".
- * Utiliza o leituraJdbcTemplate (conectado com usuário da role rl_leitor)
- * e consome a View 2 ativa: audit.vw_auditoria_prioridade.
- */
+@Primary
 @Repository("businessAuditoriaPrioridadeRepository")
-public class AuditoriaPrioridadeRepositoryImpl extends AbstractRepository<AuditoriaPrioridadeModel>
-        implements IAuditoriaPrioridadeRepository {
+public class AuditoriaPrioridadeRepositoryImpl implements IAuditoriaPrioridadeRepository {
 
-    public AuditoriaPrioridadeRepositoryImpl(@Qualifier("leituraJdbcTemplate") JdbcTemplate leituraJdbc) {
-        super(leituraJdbc);
+    private final AuditoriaPrioridadeJpaRepository jpa;
+    private final UsuarioJpaRepository usuarioJpa;
+
+    public AuditoriaPrioridadeRepositoryImpl(AuditoriaPrioridadeJpaRepository jpa, UsuarioJpaRepository usuarioJpa) {
+        this.jpa = jpa;
+        this.usuarioJpa = usuarioJpa;
     }
 
-    @Override
-    protected String getTableName() {
-        return "audit.auditoria_prioridade";
-    }
+    private void enriquecerLista(List<AuditoriaPrioridadeModel> lista) {
+        if (lista == null || lista.isEmpty()) return;
+        List<Long> idsUsuarios = lista.stream()
+                .map(AuditoriaPrioridadeModel::getAlteradoPorId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
 
-    @Override
-    protected String getSelectSql() {
-        // Consome a View 2 ativa exigida pelo edital: audit.vw_auditoria_prioridade
-        return "SELECT * FROM audit.vw_auditoria_prioridade";
-    }
+        Map<Long, String> mapaNomes = usuarioJpa.findAllById(idsUsuarios).stream()
+                .collect(Collectors.toMap(UsuarioModel::getId, UsuarioModel::getNome));
 
-    @Override
-    protected RowMapper<AuditoriaPrioridadeModel> getRowMapper() {
-        return (rs, rowNum) -> {
-            AuditoriaPrioridadeModel model = new AuditoriaPrioridadeModel();
-            model.setId(rs.getLong("id"));
-            model.setChamadoId(rs.getLong("chamado_id"));
-            model.setProtocoloChamado(rs.getString("protocolo_chamado"));
-            model.setTituloChamado(rs.getString("titulo_chamado"));
-            model.setPrioridadeAnterior(rs.getString("prioridade_anterior"));
-            model.setPrioridadeNova(rs.getString("prioridade_nova"));
-            long altPor = rs.getLong("alterado_por");
-            if (!rs.wasNull()) {
-                model.setAlteradoPorId(altPor);
+        for (AuditoriaPrioridadeModel item : lista) {
+            if (item.getAlteradoPorId() != null) {
+                item.setAlteradoPorNome(mapaNomes.getOrDefault(item.getAlteradoPorId(), "Usuário #" + item.getAlteradoPorId()));
+            } else {
+                item.setAlteradoPorNome("Sistema / Admin");
             }
-            model.setAlteradoPorNome(rs.getString("alterado_por_nome"));
-            model.setJustificativa(rs.getString("justificativa"));
-            Timestamp ts = rs.getTimestamp("alterado_em");
-            if (ts != null) {
-                model.setDataAlteracao(ts.toLocalDateTime());
-                model.setDataCadastro(ts.toLocalDateTime());
+        }
+    }
+
+    @Override
+    public Optional<AuditoriaPrioridadeModel> buscarPorId(Long id) {
+        Optional<AuditoriaPrioridadeModel> opt = jpa.findById(id);
+        opt.ifPresent(item -> {
+            if (item.getAlteradoPorId() != null) {
+                usuarioJpa.findById(item.getAlteradoPorId())
+                        .ifPresent(u -> item.setAlteradoPorNome(u.getNome()));
             }
-            model.setAtivo(true);
-            return model;
-        };
+        });
+        return opt;
     }
 
     @Override
     public List<AuditoriaPrioridadeModel> listarTodos() {
-        return jdbc.query(getSelectSql() + " ORDER BY alterado_em DESC, id DESC", getRowMapper());
+        List<AuditoriaPrioridadeModel> lista = jpa.findAllOrderByDataAlteracaoDesc();
+        enriquecerLista(lista);
+        return lista;
     }
 
     @Override
@@ -71,31 +68,28 @@ public class AuditoriaPrioridadeRepositoryImpl extends AbstractRepository<Audito
 
     @Override
     public List<AuditoriaPrioridadeModel> listarPorChamado(Long chamadoId) {
-        return jdbc.query(
-                getSelectSql() + " WHERE chamado_id = ? ORDER BY alterado_em DESC, id DESC",
-                getRowMapper(),
-                chamadoId);
+        List<AuditoriaPrioridadeModel> lista = jpa.findByChamadoIdOrderByDataAlteracaoDesc(chamadoId);
+        enriquecerLista(lista);
+        return lista;
     }
 
     @Override
     public AuditoriaPrioridadeModel salvar(AuditoriaPrioridadeModel entity) {
-        throw new NegocioException(
-                "A tabela audit.auditoria_prioridade é imutável pela aplicação e alimentada exclusivamente por Trigger no PostgreSQL.");
+        return jpa.save(entity);
     }
 
     @Override
     public void atualizar(AuditoriaPrioridadeModel entity) {
-        throw new NegocioException("Registros de auditoria não podem ser alterados.");
+        // Auditoria é imutável no banco de dados (schema audit)
     }
 
     @Override
     public void deletar(Long id) {
-        throw new NegocioException("Registros de auditoria não podem ser excluídos.");
+        // Auditoria é imutável no banco de dados (schema audit)
     }
 
     @Override
     public void toggleStatus(Long id) {
-        throw new NegocioException("Registros de auditoria são imutáveis.");
+        // Auditoria é imutável
     }
 }
-

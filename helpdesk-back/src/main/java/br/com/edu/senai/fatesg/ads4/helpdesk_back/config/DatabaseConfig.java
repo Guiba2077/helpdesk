@@ -20,9 +20,17 @@ public class DatabaseConfig {
 
     @Bean
     @Primary
-    @ConfigurationProperties("spring.datasource")
-    public HikariDataSource primaryDataSource() {
+    @ConfigurationProperties("spring.datasource.hikari")
+    public HikariDataSource primaryDataSource(
+            @org.springframework.beans.factory.annotation.Value("${spring.datasource.jdbc-url}") String jdbcUrl,
+            @org.springframework.beans.factory.annotation.Value("${spring.datasource.username}") String username,
+            @org.springframework.beans.factory.annotation.Value("${spring.datasource.password}") String password,
+            @org.springframework.beans.factory.annotation.Value("${spring.datasource.driver-class-name}") String driverClassName) {
         HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl(jdbcUrl);
+        ds.setUsername(username);
+        ds.setPassword(password);
+        ds.setDriverClassName(driverClassName);
         ds.addDataSourceProperty("prepareThreshold", "0");
         return ds;
     }
@@ -52,4 +60,5 @@ public class DatabaseConfig {
         return new JdbcTemplate(leituraDataSource);
     }
 }
+
 

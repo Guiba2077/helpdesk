@@ -12,6 +12,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -92,5 +93,13 @@ public class TecnicoController extends GenericController<TecnicoDTO> {
                 .disponivel(request.disponivel() == null || request.disponivel())
                 .build();
         return ResponseEntity.ok(service.atualizar(id, model));
+    }
+
+    @PatchMapping("/{id}/disponibilidade")
+    public ResponseEntity<TecnicoDTO> alternarDisponibilidade(
+            @PathVariable Long id,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
+        return ResponseEntity.ok(service.alternarDisponibilidade(id));
     }
 }
