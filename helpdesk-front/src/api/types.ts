@@ -93,3 +93,25 @@ export interface Apontamento {
   autorNome?: string
   criadoEm: string
 }
+
+export interface AuditoriaPrioridade {
+  id: number
+  chamadoId: number
+  protocoloChamado: string
+  tituloChamado?: string | null
+  prioridadeAnterior: Prioridade
+  prioridadeNova: Prioridade
+  alteradoPorNome?: string | null
+  justificativa?: string | null
+  dataAlteracao: string
+}
+
+export interface MetricaSla {
+  tecnicoId: number
+  tecnicoNome: string
+  especialidade: string
+  totalChamadosAtribuidos: number
+  chamadosEncerrados: number
+  chamadosEmAtendimento: number
+  tempoMedioResolucaoHoras: number
+}

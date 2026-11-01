@@ -22,11 +22,41 @@ function IconeTecnico() {
   )
 }
 
-const assistencia: { to: string; rotulo: string; icone: ReactNode }[] = [
-  { to: '/chamados', rotulo: 'Chamados', icone: <IconeChamado /> },
-]
-const administracao: { to: string; rotulo: string; icone: ReactNode; perfis: Perfil[] }[] = [
-  { to: '/tecnicos', rotulo: 'Tecnicos', icone: <IconeTecnico />, perfis: ['ADMIN'] },
+function Icone({ d }: { d: string }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={d} />
+    </svg>
+  )
+}
+
+interface Item {
+  to: string
+  rotulo: string
+  icone: ReactNode
+  perfis?: Perfil[]
+}
+
+const grupos: { titulo: string; itens: Item[] }[] = [
+  {
+    titulo: 'Assistencia',
+    itens: [{ to: '/chamados', rotulo: 'Chamados', icone: <IconeChamado /> }],
+  },
+  {
+    titulo: 'Relatorios',
+    itens: [
+      { to: '/relatorios', rotulo: 'SLA e tuning', icone: <Icone d="M4 20V10M10 20V4M16 20v-7M22 20H2" /> },
+      { to: '/auditoria', rotulo: 'Auditoria', icone: <Icone d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /> },
+    ],
+  },
+  {
+    titulo: 'Administracao',
+    itens: [
+      { to: '/usuarios', rotulo: 'Usuarios', icone: <Icone d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />, perfis: ['ADMIN'] },
+      { to: '/tecnicos', rotulo: 'Tecnicos', icone: <IconeTecnico />, perfis: ['ADMIN'] },
+      { to: '/especialidades', rotulo: 'Especialidades', icone: <Icone d="M4 6h16M4 12h16M4 18h10" />, perfis: ['ADMIN'] },
+    ],
+  },
 ]
 
 export default function Layout() {
@@ -38,15 +68,14 @@ export default function Layout() {
     .join('')
     .toUpperCase()
 
-  const grupos = [
-    { titulo: 'Assistencia', itens: assistencia },
-    {
-      titulo: 'Administracao',
-      itens: administracao.filter(
-        (i) => usuario && i.perfis.includes(usuario.perfil),
+  const menu = grupos
+    .map((g) => ({
+      ...g,
+      itens: g.itens.filter(
+        (i) => !i.perfis || (usuario && i.perfis.includes(usuario.perfil)),
       ),
-    },
-  ].filter((g) => g.itens.length > 0)
+    }))
+    .filter((g) => g.itens.length > 0)
 
   return (
     <div className="min-h-screen md:flex">
@@ -57,7 +86,7 @@ export default function Layout() {
           </span>
           <span className="text-white font-semibold tracking-wide">Helpdesk TI</span>
         </div>
-        {grupos.map((g) => (
+        {menu.map((g) => (
           <div key={g.titulo}>
             <p className="px-5 pt-5 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
               {g.titulo}

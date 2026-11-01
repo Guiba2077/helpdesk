@@ -76,3 +76,16 @@ export const fecharChamado = (id: number, solucao: string) =>
     method: 'POST',
     body: json({ solucao }),
   })
+
+export interface EdicaoChamado {
+  titulo: string
+  descricao: string
+  categoria: Categoria
+}
+
+export const atualizarChamado = (id: number, b: EdicaoChamado) =>
+  apiRequest<Chamado>(`/chamados/${id}`, { method: 'PUT', body: json(b) })
+
+// Exclusao logica: o chamado fica inativo e sai da fila.
+export const inativarChamado = (id: number) =>
+  apiRequest<void>(`/chamados/${id}`, { method: 'DELETE' })

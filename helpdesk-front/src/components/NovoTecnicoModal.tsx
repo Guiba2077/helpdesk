@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ApiError } from '../api/client'
 import { criarTecnico, listarEspecialidades } from '../api/tecnicosApi'
 import type {
@@ -9,32 +9,10 @@ import type {
 } from '../api/types'
 import { criarUsuario, listarUsuarios } from '../api/usuariosApi'
 import Alerta from './Alerta'
+import { campo, Linha } from './form'
 import Modal from './Modal'
 
 const NIVEIS: NivelAtendimento[] = ['N1', 'N2', 'N3']
-
-const campo =
-  'w-full rounded border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary'
-
-function Linha({
-  rotulo,
-  obrigatorio,
-  children,
-}: {
-  rotulo: string
-  obrigatorio?: boolean
-  children: ReactNode
-}) {
-  return (
-    <div className="grid gap-1 sm:grid-cols-[9rem_1fr] sm:items-start sm:gap-4">
-      <span className="text-sm font-medium text-slate-600 sm:pt-2 sm:text-right">
-        {rotulo}
-        {obrigatorio && <span className="text-red-600"> *</span>}
-      </span>
-      <div>{children}</div>
-    </div>
-  )
-}
 
 type Modo = 'novo' | 'existente'
 
