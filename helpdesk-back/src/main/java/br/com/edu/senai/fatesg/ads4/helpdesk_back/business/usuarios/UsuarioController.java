@@ -1,6 +1,7 @@
 package br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios;
 
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.controllers.GenericController;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.exceptions.NegocioException;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.services.IGenericService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +32,14 @@ public class UsuarioController extends GenericController<UsuarioDTO> {
     @Override
     protected IGenericService<UsuarioDTO> getService() {
         return service;
+    }
+
+    private void exigirAdmin(Long usuarioLogadoId) {
+        UsuarioDTO logado = service.buscarPorId(usuarioLogadoId != null ? usuarioLogadoId : 1L);
+        if (logado == null || !"ADMIN".equalsIgnoreCase(logado.getPerfil())) {
+            throw new NegocioException(
+                    "Acesso negado: Apenas usuários com perfil ADMIN podem cadastrar ou gerenciar usuários.");
+        }
     }
 
     public record LoginRequest(
@@ -61,7 +71,10 @@ public class UsuarioController extends GenericController<UsuarioDTO> {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioDTO> criar(@Valid @RequestBody CriarUsuarioRequest request) {
+    public ResponseEntity<UsuarioDTO> criar(
+            @Valid @RequestBody CriarUsuarioRequest request,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
         UsuarioModel model = UsuarioModel.builder()
                 .nome(request.nome())
                 .email(request.email())
@@ -76,7 +89,9 @@ public class UsuarioController extends GenericController<UsuarioDTO> {
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioDTO> atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody CriarUsuarioRequest request) {
+            @Valid @RequestBody CriarUsuarioRequest request,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
         UsuarioModel model = UsuarioModel.builder()
                 .nome(request.nome())
                 .email(request.email())

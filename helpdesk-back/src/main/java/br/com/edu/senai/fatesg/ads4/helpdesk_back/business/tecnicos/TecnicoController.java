@@ -1,6 +1,9 @@
 package br.com.edu.senai.fatesg.ads4.helpdesk_back.business.tecnicos;
 
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.IUsuarioService;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.business.usuarios.UsuarioDTO;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.controllers.GenericController;
+import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.exceptions.NegocioException;
 import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.services.IGenericService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,14 +25,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class TecnicoController extends GenericController<TecnicoDTO> {
 
     private final ITecnicoService service;
+    private final IUsuarioService usuarioService;
 
-    public TecnicoController(ITecnicoService service) {
+    public TecnicoController(ITecnicoService service, IUsuarioService usuarioService) {
         this.service = service;
+        this.usuarioService = usuarioService;
     }
 
     @Override
     protected IGenericService<TecnicoDTO> getService() {
         return service;
+    }
+
+    private void exigirAdmin(Long usuarioLogadoId) {
+        UsuarioDTO logado = usuarioService.buscarPorId(usuarioLogadoId != null ? usuarioLogadoId : 1L);
+        if (logado == null || !"ADMIN".equalsIgnoreCase(logado.getPerfil())) {
+            throw new NegocioException(
+                    "Acesso negado: Apenas usuários com perfil ADMIN podem cadastrar ou gerenciar técnicos de TI.");
+        }
     }
 
     public record SalvarTecnicoRequest(
@@ -50,7 +64,10 @@ public class TecnicoController extends GenericController<TecnicoDTO> {
     }
 
     @PostMapping
-    public ResponseEntity<TecnicoDTO> criar(@Valid @RequestBody SalvarTecnicoRequest request) {
+    public ResponseEntity<TecnicoDTO> criar(
+            @Valid @RequestBody SalvarTecnicoRequest request,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
         TecnicoModel model = TecnicoModel.builder()
                 .usuarioId(request.usuarioId())
                 .matricula(request.matricula())
@@ -64,7 +81,9 @@ public class TecnicoController extends GenericController<TecnicoDTO> {
     @PutMapping("/{id}")
     public ResponseEntity<TecnicoDTO> atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody SalvarTecnicoRequest request) {
+            @Valid @RequestBody SalvarTecnicoRequest request,
+            @RequestHeader(name = "X-Usuario-Id", required = false, defaultValue = "1") Long usuarioLogadoId) {
+        exigirAdmin(usuarioLogadoId);
         TecnicoModel model = TecnicoModel.builder()
                 .usuarioId(request.usuarioId())
                 .matricula(request.matricula())
@@ -75,4 +94,3 @@ public class TecnicoController extends GenericController<TecnicoDTO> {
         return ResponseEntity.ok(service.atualizar(id, model));
     }
 }
-
