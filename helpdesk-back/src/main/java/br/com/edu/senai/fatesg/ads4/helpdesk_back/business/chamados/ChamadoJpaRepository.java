@@ -16,14 +16,16 @@ public interface ChamadoJpaRepository extends JpaRepository<ChamadoModel, Long> 
 
     List<ChamadoModel> findAllByOrderByDataAberturaDesc();
 
-    @Modifying
+    // clearAutomatically: a procedure altera o chamado por fora do Hibernate, então o cache
+    // de primeiro nível é limpo para que a leitura seguinte traga o status atualizado do banco
+    @Modifying(clearAutomatically = true)
     @Query(value = "CALL app.sp_alocar_chamado(:chamadoId, :tecnicoId, :usuarioResponsavelId)", nativeQuery = true)
     void chamarSpAlocarChamado(
             @Param("chamadoId") Long chamadoId,
             @Param("tecnicoId") Long tecnicoId,
             @Param("usuarioResponsavelId") Long usuarioResponsavelId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query(value = """
             UPDATE app.chamado
                SET status = 'FECHADO',

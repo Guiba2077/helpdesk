@@ -130,10 +130,11 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
         ChamadoModel chamado = repository.buscarPorId(chamadoId)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Chamado não encontrado com ID: " + chamadoId));
 
-        ChamadoTemplate.validarEIniciarAtendimento(chamado, tecnicoId);
+        ChamadoTemplate.validarAlocacaoTecnico(chamado, tecnicoId);
         sessionContextManager.definirContextoUsuario(usuario.getId(), usuario.getPerfil().name());
 
-        // Aciona a Procedure app.sp_alocar_chamado no PostgreSQL (que também dispara a Trigger de histórico)
+        // Aciona a Procedure app.sp_alocar_chamado no PostgreSQL (que também dispara a Trigger de histórico).
+        // A procedure é quem muda o status para ATENDIMENTO e grava o técnico.
         repository.alocarTecnicoViaProcedure(chamadoId, tecnicoId, usuario.getId());
 
         return buscarPorId(chamadoId);
@@ -195,11 +196,11 @@ public class ChamadoService extends GenericService<ChamadoModel, ChamadoDTO, ICh
             }
         }
 
-        ChamadoTemplate.validarEEncerrar(chamado, solucao);
+        String solucaoValidada = ChamadoTemplate.validarEncerramento(chamado, solucao);
         sessionContextManager.definirContextoUsuario(usuario.getId(), usuario.getPerfil().name());
 
         // Dispara automaticamente a Trigger trg_historico_status (ATENDIMENTO -> FECHADO)
-        repository.encerrarChamado(chamadoId, chamado.getSolucao());
+        repository.encerrarChamado(chamadoId, solucaoValidada);
 
         return buscarPorId(chamadoId);
     }
