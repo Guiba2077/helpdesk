@@ -4,21 +4,27 @@ import br.com.edu.senai.fatesg.ads4.helpdesk_back.core.domains.BaseModel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Immutable;
 
+/**
+ * Trilha de auditoria de prioridade, lida pela view audit.vw_auditoria_prioridade.
+ * Os registros sao gravados exclusivamente pela trigger trg_auditoria_prioridade
+ * no PostgreSQL; a aplicacao apenas consulta.
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(schema = "audit", name = "auditoria_prioridade")
+@Immutable
+@Table(schema = "audit", name = "vw_auditoria_prioridade")
 public class AuditoriaPrioridadeModel extends BaseModel {
 
     @Column(name = "chamado_id", nullable = false)
@@ -43,10 +49,9 @@ public class AuditoriaPrioridadeModel extends BaseModel {
     @Column(name = "alterado_em", nullable = false)
     private LocalDateTime dataAlteracao = LocalDateTime.now();
 
-    @Transient
+    @Column(name = "titulo_chamado")
     private String tituloChamado;
 
-    @Transient
+    @Column(name = "alterado_por_nome")
     private String alteradoPorNome;
 }
-
