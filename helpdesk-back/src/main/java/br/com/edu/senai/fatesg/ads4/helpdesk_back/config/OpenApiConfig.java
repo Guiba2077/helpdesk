@@ -13,7 +13,7 @@ public class OpenApiConfig {
     public OpenAPI helpdeskOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("Helpdesk API — Sistema de Controle de Chamados de TI (Tema G3)")
+                        .title("Helpdesk API: Sistema de Controle de Chamados de TI (Tema G3)")
                         .description("API REST em Spring Boot + PostgreSQL 16+ (Schemas app/audit, PgBouncer, "
                                 + "RBAC rl_leitor/rl_escritor, RLS, pgcrypto, Triggers, Procedure, Function, "
                                 + "Views e statement_timeout curto).")
