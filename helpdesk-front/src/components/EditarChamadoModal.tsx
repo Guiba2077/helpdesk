@@ -2,17 +2,10 @@ import { useState, type FormEvent } from 'react'
 import { atualizarChamado } from '../api/chamadosApi'
 import { ApiError } from '../api/client'
 import type { Categoria, Chamado } from '../api/types'
+import { CATEGORIAS } from '../util/rotulos'
 import Alerta from './Alerta'
 import { botaoPrimario, botaoSecundario, campo, Linha } from './form'
 import Modal from './Modal'
-
-const CATEGORIAS: { valor: Categoria; rotulo: string }[] = [
-  { valor: 'REDE', rotulo: 'Infraestrutura e Rede' },
-  { valor: 'HARDWARE', rotulo: 'Hardware e Equipamentos' },
-  { valor: 'SOFTWARE', rotulo: 'Sistemas e Software' },
-  { valor: 'BANCO_DADOS', rotulo: 'Banco de Dados' },
-  { valor: 'ACESSO', rotulo: 'Seguranca e Permissoes de Acesso' },
-]
 
 export default function EditarChamadoModal({
   chamado,
@@ -76,14 +69,14 @@ export default function EditarChamadoModal({
             ))}
           </select>
         </Linha>
-        <Linha rotulo="Titulo" obrigatorio>
+        <Linha rotulo="Título" obrigatorio>
           <input required maxLength={150} value={titulo} onChange={(e) => setTitulo(e.target.value)} className={campo} />
         </Linha>
-        <Linha rotulo="Descricao" obrigatorio>
+        <Linha rotulo="Descrição" obrigatorio>
           <textarea required rows={6} maxLength={2000} value={descricao} onChange={(e) => setDescricao(e.target.value)} className={campo} />
         </Linha>
         <p className="text-xs text-slate-400 sm:pl-[10rem]">
-          Prioridade, tecnico e status nao mudam aqui: use os controles do detalhe.
+          Prioridade, técnico e status não mudam aqui. Use os controles do detalhe do chamado.
         </p>
       </form>
     </Modal>

@@ -9,11 +9,16 @@ import type {
 } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
 import Card from '../components/Card'
+import { LinhaEstado, Spinner } from '../components/Carregando'
 import DetalheChamadoModal from '../components/DetalheChamadoModal'
 import NovoChamadoModal from '../components/NovoChamadoModal'
+import Paginacao from '../components/Paginacao'
+import { usePaginacao } from '../components/usePaginacao'
+import { rotuloPrioridade, rotuloStatus } from '../util/rotulos'
 
 const STATUS: StatusChamado[] = ['ABERTO', 'ATENDIMENTO', 'FECHADO']
 const PRIORIDADES: Prioridade[] = ['BAIXA', 'MEDIA', 'ALTA', 'CRITICA']
+const COLUNAS = ['Protocolo', 'Título', 'Solicitante', 'Técnico', 'Prioridade', 'Status', 'Aberto em']
 
 const corStatus: Record<StatusChamado, string> = {
   ABERTO: 'bg-blue-100 text-blue-800',
@@ -36,15 +41,19 @@ function Indicador({
   titulo,
   valor,
   cor,
+  falhou,
 }: {
   titulo: string
   valor?: number
   cor: string
+  falhou: boolean
 }) {
   return (
     <div className={`rounded-md bg-white border border-line border-l-4 ${cor} shadow-sm p-4`}>
       <p className="text-xs uppercase tracking-wide text-slate-500">{titulo}</p>
-      <p className="text-3xl font-bold text-slate-800">{valor ?? '-'}</p>
+      <p className="text-3xl font-bold text-slate-800">
+        {valor ?? (falhou ? '-' : <Spinner className="size-6 text-slate-300" />)}
+      </p>
     </div>
   )
 }
@@ -62,11 +71,12 @@ export default function Chamados() {
   const [detalheId, setDetalheId] = useState<number | null>(null)
   const podeAbrir = usuario?.perfil !== 'TECNICO'
   const recarregar = useCallback(() => setRecarga((n) => n + 1), [])
+  const pag = usePaginacao(chamados)
 
   useEffect(() => {
     resumoDashboard()
       .then(setResumo)
-      .catch((e) => setErro(e instanceof ApiError ? e.message : 'Erro.'))
+      .catch((e) => setErro(e instanceof ApiError ? e.message : 'Erro ao carregar os indicadores.'))
   }, [recarga])
 
   useEffect(() => {
@@ -78,7 +88,7 @@ export default function Chamados() {
         setErro('')
       })
       .catch((e) => {
-        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro.')
+        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro ao carregar os chamados.')
       })
       .finally(() => {
         if (ativo) setCarregando(false)
@@ -91,6 +101,7 @@ export default function Chamados() {
   function trocarFiltro<T>(set: (v: T) => void) {
     return (v: T) => {
       setCarregando(true)
+      pag.reiniciar()
       set(v)
     }
   }
@@ -103,7 +114,7 @@ export default function Chamados() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">Chamados</h1>
-          <p className="text-xs text-slate-500">Inicio / Assistencia / Chamados</p>
+          <p className="text-xs text-slate-500">Início / Assistência / Chamados</p>
         </div>
         {podeAbrir && (
           <button
@@ -116,10 +127,10 @@ export default function Chamados() {
       </div>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <Indicador titulo="Abertos" valor={resumo?.chamadosAbertos} cor="border-l-blue-500" />
-        <Indicador titulo="Em atendimento" valor={resumo?.chamadosEmAtendimento} cor="border-l-amber-400" />
-        <Indicador titulo="Fechados" valor={resumo?.chamadosFechados} cor="border-l-green-500" />
-        <Indicador titulo="Criticos" valor={resumo?.chamadosPrioridadeCritica} cor="border-l-red-500" />
+        <Indicador titulo="Abertos" valor={resumo?.chamadosAbertos} cor="border-l-blue-500" falhou={!!erro} />
+        <Indicador titulo="Em atendimento" valor={resumo?.chamadosEmAtendimento} cor="border-l-amber-400" falhou={!!erro} />
+        <Indicador titulo="Fechados" valor={resumo?.chamadosFechados} cor="border-l-green-500" falhou={!!erro} />
+        <Indicador titulo="Críticos" valor={resumo?.chamadosPrioridadeCritica} cor="border-l-red-500" falhou={!!erro} />
       </section>
 
       {erro && (
@@ -145,7 +156,7 @@ export default function Chamados() {
             >
               <option value="">Todos os status</option>
               {STATUS.map((s) => (
-                <option key={s}>{s}</option>
+                <option key={s} value={s}>{rotuloStatus[s]}</option>
               ))}
             </select>
             <select
@@ -158,7 +169,7 @@ export default function Chamados() {
             >
               <option value="">Todas as prioridades</option>
               {PRIORIDADES.map((p) => (
-                <option key={p}>{p}</option>
+                <option key={p} value={p}>{rotuloPrioridade[p]}</option>
               ))}
             </select>
           </div>
@@ -168,18 +179,16 @@ export default function Chamados() {
           <table className="w-full text-left">
             <thead className="bg-surface text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                {['Protocolo','Titulo','Solicitante','Tecnico','Prioridade','Status','Aberto em'].map((h) => (
+                {COLUNAS.map((h) => (
                   <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {carregando ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Carregando...</td></tr>
-              ) : chamados.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Nenhum chamado encontrado.</td></tr>
+              {carregando || chamados.length === 0 ? (
+                <LinhaEstado colunas={COLUNAS.length} carregando={carregando} vazio="Nenhum chamado encontrado." />
               ) : (
-                chamados.map((c) => (
+                pag.itensPagina.map((c) => (
                   <tr
                     key={c.id}
                     onClick={() => setDetalheId(c.id)}
@@ -193,10 +202,10 @@ export default function Chamados() {
                     </td>
                     <td className="px-4 py-3">{c.tecnicoNome ?? '-'}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded px-2 py-0.5 text-xs font-semibold ${corPrioridade[c.prioridade]}`}>{c.prioridade}</span>
+                      <span className={`rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${corPrioridade[c.prioridade]}`}>{rotuloPrioridade[c.prioridade]}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`rounded px-2 py-0.5 text-xs font-semibold ${corStatus[c.status]}`}>{c.status}</span>
+                      <span className={`rounded px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${corStatus[c.status]}`}>{rotuloStatus[c.status]}</span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">{formatarData(c.dataAbertura)}</td>
                   </tr>
@@ -205,6 +214,7 @@ export default function Chamados() {
             </tbody>
           </table>
         </div>
+        {!carregando && <Paginacao {...pag} />}
       </Card>
 
       {novo && (

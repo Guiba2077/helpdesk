@@ -3,12 +3,16 @@ import { ApiError } from '../api/client'
 import { alternarDisponibilidade, listarTecnicos } from '../api/tecnicosApi'
 import type { Tecnico } from '../api/types'
 import Card from '../components/Card'
+import { LinhaEstado } from '../components/Carregando'
 import NovoTecnicoModal from '../components/NovoTecnicoModal'
+
+const COLUNAS = ['Matrícula', 'Nome', 'Especialidade', 'Nível', 'Setor', 'Disponibilidade']
 
 export default function Tecnicos() {
   const [tecnicos, setTecnicos] = useState<Tecnico[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [alternandoId, setAlternandoId] = useState<number | null>(null)
   const [novo, setNovo] = useState(false)
   const [recarga, setRecarga] = useState(0)
   const recarregar = useCallback(() => setRecarga((n) => n + 1), [])
@@ -22,7 +26,7 @@ export default function Tecnicos() {
         setErro('')
       })
       .catch((e) => {
-        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro.')
+        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro ao carregar os técnicos.')
       })
       .finally(() => {
         if (ativo) setCarregando(false)
@@ -33,11 +37,14 @@ export default function Tecnicos() {
   }, [recarga])
 
   async function alternar(id: number) {
+    setAlternandoId(id)
     try {
       await alternarDisponibilidade(id)
       recarregar()
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Falha na operacao.')
+      setErro(e instanceof ApiError ? e.message : 'Falha na operação.')
+    } finally {
+      setAlternandoId(null)
     }
   }
 
@@ -45,14 +52,14 @@ export default function Tecnicos() {
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">Tecnicos</h1>
-          <p className="text-xs text-slate-500">Inicio / Administracao / Tecnicos</p>
+          <h1 className="text-xl font-semibold text-slate-800">Técnicos</h1>
+          <p className="text-xs text-slate-500">Início / Administração / Técnicos</p>
         </div>
         <button
           onClick={() => setNovo(true)}
           className="rounded bg-primary hover:bg-primary-dark text-white px-4 py-2 font-medium"
         >
-          + Novo tecnico
+          + Novo técnico
         </button>
       </div>
 
@@ -62,21 +69,19 @@ export default function Tecnicos() {
         </div>
       )}
 
-      <Card titulo="Equipe tecnica">
+      <Card titulo="Equipe técnica">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                {['Matricula', 'Nome', 'Especialidade', 'Nivel', 'Setor', 'Disponibilidade'].map((h) => (
+                {COLUNAS.map((h) => (
                   <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {carregando ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Carregando...</td></tr>
-              ) : tecnicos.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Nenhum tecnico cadastrado.</td></tr>
+              {carregando || tecnicos.length === 0 ? (
+                <LinhaEstado colunas={COLUNAS.length} carregando={carregando} vazio="Nenhum técnico cadastrado." />
               ) : (
                 tecnicos.map((t) => (
                   <tr key={t.id} className="border-t border-line hover:bg-surface">
@@ -91,14 +96,15 @@ export default function Tecnicos() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => alternar(t.id)}
+                        disabled={alternandoId !== null}
                         title="Alternar disponibilidade"
-                        className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                        className={`rounded px-2.5 py-1 text-xs font-semibold disabled:opacity-60 ${
                           t.disponivel
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
                         }`}
                       >
-                        {t.disponivel ? 'Disponivel' : 'Indisponivel'}
+                        {alternandoId === t.id ? 'Salvando...' : t.disponivel ? 'Disponível' : 'Indisponível'}
                       </button>
                     </td>
                   </tr>

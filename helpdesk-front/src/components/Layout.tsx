@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import type { Perfil } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { rotuloPerfil } from '../util/rotulos'
 
 function IconeChamado() {
   return (
@@ -39,21 +40,21 @@ interface Item {
 
 const grupos: { titulo: string; itens: Item[] }[] = [
   {
-    titulo: 'Assistencia',
+    titulo: 'Assistência',
     itens: [{ to: '/chamados', rotulo: 'Chamados', icone: <IconeChamado /> }],
   },
   {
-    titulo: 'Relatorios',
+    titulo: 'Relatórios',
     itens: [
       { to: '/relatorios', rotulo: 'SLA e tuning', icone: <Icone d="M4 20V10M10 20V4M16 20v-7M22 20H2" /> },
       { to: '/auditoria', rotulo: 'Auditoria', icone: <Icone d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /> },
     ],
   },
   {
-    titulo: 'Administracao',
+    titulo: 'Administração',
     itens: [
-      { to: '/usuarios', rotulo: 'Usuarios', icone: <Icone d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />, perfis: ['ADMIN'] },
-      { to: '/tecnicos', rotulo: 'Tecnicos', icone: <IconeTecnico />, perfis: ['ADMIN'] },
+      { to: '/usuarios', rotulo: 'Usuários', icone: <Icone d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0" />, perfis: ['ADMIN'] },
+      { to: '/tecnicos', rotulo: 'Técnicos', icone: <IconeTecnico />, perfis: ['ADMIN'] },
       { to: '/especialidades', rotulo: 'Especialidades', icone: <Icone d="M4 6h16M4 12h16M4 18h10" />, perfis: ['ADMIN'] },
     ],
   },
@@ -122,7 +123,7 @@ export default function Layout() {
           <div className="flex items-center gap-3">
             <div className="text-right leading-tight hidden sm:block">
               <p className="font-medium text-slate-800">{usuario?.nome}</p>
-              <p className="text-xs text-slate-500">{usuario?.perfil}</p>
+              <p className="text-xs text-slate-500">{usuario && rotuloPerfil[usuario.perfil]}</p>
             </div>
             <span className="grid place-items-center size-9 rounded-full bg-primary text-white text-sm font-semibold">
               {iniciais}
