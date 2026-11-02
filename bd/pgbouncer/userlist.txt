@@ -1,0 +1,2 @@
+"usr_helpdesk_escritor" "escritor123"
+"usr_helpdesk_leitor" "leitor123"
