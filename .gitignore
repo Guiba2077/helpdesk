@@ -1,0 +1,16 @@
+# Dados fisicos do PostgreSQL: nunca versionar
+bd/data/
+bd/pgdata/
+**/pgdata/
+*.dump
+
+# Ambiente local
+.env
+.env.*
+
+# Editores e sistema operacional
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
