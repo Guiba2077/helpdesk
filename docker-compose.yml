@@ -1,0 +1,120 @@
+name: helpdesk
+
+# =============================================================================
+# Helpdesk TI (Tema G3)
+# Sobe toda a aplicacao com um unico comando:  docker compose up --build
+#
+#   frontend  nginx + SPA React .......... http://localhost:5173
+#   backend   Spring Boot (API REST) ...... http://localhost:8080/swagger-ui.html
+#   pgbouncer pool de conexoes ............ localhost:6432 (uso interno)
+#   db        PostgreSQL 16 ............... localhost:5432 (rejeita conexoes externas, ver bd/pg_hba.conf)
+#
+# A rede tem subnet fixa porque o pg_hba.conf libera apenas os IPs do PgBouncer
+# (172.28.0.20) e do backend (172.28.0.30).
+# =============================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: helpdesk-db
+    environment:
+      POSTGRES_DB: helpdesk
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      TZ: America/Sao_Paulo
+    # Usa os arquivos de configuracao versionados na pasta bd em vez dos padroes da imagem
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+    volumes:
+      - ./bd/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./bd/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./bd/backup.sql:/docker-entrypoint-initdb.d/01_backup.sql:ro
+      - helpdesk_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d helpdesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    networks:
+      helpdesk_net:
+        ipv4_address: 172.28.0.10
+
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.23.1-p2
+    container_name: helpdesk-pgbouncer
+    volumes:
+      - ./bd/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./bd/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    ports:
+      - "6432:6432"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      helpdesk_net:
+        ipv4_address: 172.28.0.20
+
+  backend:
+    build:
+      context: ./helpdesk-back
+    container_name: helpdesk-backend
+    environment:
+      SERVER_PORT: 8080
+      # Toda conexao passa pelo PgBouncer (modo transaction) com prepareThreshold=0
+      DB_URL: jdbc:postgresql://pgbouncer:6432/helpdesk?prepareThreshold=0
+      DB_USER_ESCRITOR: usr_helpdesk_escritor
+      DB_PASS_ESCRITOR: escritor123
+      DB_URL_LEITURA: jdbc:postgresql://pgbouncer:6432/helpdesk?prepareThreshold=0
+      DB_USER_LEITOR: usr_helpdesk_leitor
+      DB_PASS_LEITOR: leitor123
+      TZ: America/Sao_Paulo
+      JAVA_TOOL_OPTIONS: -Duser.timezone=America/Sao_Paulo
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      pgbouncer:
+        condition: service_started
+    restart: on-failure:5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/v3/api-docs || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      helpdesk_net:
+        ipv4_address: 172.28.0.30
+
+  frontend:
+    build:
+      context: ./helpdesk-front
+      args:
+        VITE_API_URL: /api
+    container_name: helpdesk-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      helpdesk_net:
+        ipv4_address: 172.28.0.40
+
+volumes:
+  # Volume gerenciado pelo Docker: os dados fisicos do PostgreSQL nunca entram no repositorio
+  helpdesk_pgdata:
+
+networks:
+  helpdesk_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1

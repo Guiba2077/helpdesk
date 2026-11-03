@@ -1,7 +1,7 @@
-# Helpdesk Back-End — API REST (Spring Boot 3 + PostgreSQL 16+)
+# Helpdesk Back-End: API REST (Spring Boot 4.1.2 + PostgreSQL 16+)
 
-> **Projeto:** Sistema de Controle de Chamados de TI (Helpdesk — Tema G3)  
-> **Instituição:** SENAI FATESG — Análise e Desenvolvimento de Sistemas (ADS 4)  
+> **Projeto:** Sistema de Controle de Chamados de TI (Helpdesk: Tema G3)  
+> **Instituição:** SENAI FATESG: Análise e Desenvolvimento de Sistemas (ADS 4)  
 > **Disciplina:** Gerenciamento de Banco de Dados / Desenvolvimento de Aplicações Fullstack  
 > **Porta Padrão:** `8080` | **URL Base:** `http://localhost:8080/api`  
 > **Documentação Interativa (Swagger/OpenAPI):** `http://localhost:8080/swagger-ui.html`
@@ -10,7 +10,7 @@
 
 ## 1. Proposta do Sistema
 
-O **Helpdesk Back-End** é uma API REST desenvolvida em **Java 21 com Spring Boot 3**, projetada para operar como a camada de aplicação de um ecossistema corporativo de controle de chamados e incidentes de TI.
+O **Helpdesk Back-End** é uma API REST desenvolvida em **Java 21 com Spring Boot 4.1.2**, projetada para operar como a camada de aplicação de um ecossistema corporativo de controle de chamados e incidentes de TI.
 
 Diferente de aplicações convencionais que tratam o banco de dados como mero depósito de dados, este projeto foi desenhado sob o conceito de **Banco de Dados Ativo e Seguro**, transferindo a inteligência transacional, o compliance e o isolamento de privilégios para o **PostgreSQL 16+**:
 
@@ -30,14 +30,14 @@ Diferente de aplicações convencionais que tratam o banco de dados como mero de
 | Tecnologia / Ferramenta | Versão | Finalidade no Projeto |
 | :--- | :---: | :--- |
 | **Java** | `21 (LTS)` | Linguagem base da aplicação com suporte a Virtual Threads e Records. |
-| **Spring Boot** | `3.4.x` | Framework principal para criação da API REST e injeção de dependências. |
+| **Spring Boot** | `4.1.2` | Framework principal para criação da API REST e injeção de dependências. |
 | **Spring Data JPA / Hibernate** | `6.x` | Mapeamento objeto-relacional com schemas explícitos (`app` e `audit`). |
 | **HikariCP** | `5.x` | Pool de conexões de alta performance (2 datasources: leitura e escrita). |
 | **PostgreSQL JDBC Driver** | `42.7.x` | Conector nativo de banco de dados com suporte a Prepared Statements. |
-| **SpringDoc OpenAPI (Swagger)** | `2.8.x` | Documentação viva interativa dos endpoints em `/swagger-ui.html`. |
+| **SpringDoc OpenAPI (Swagger)** | `3.2.0` | Documentação viva interativa dos endpoints em `/swagger-ui.html`. |
 | **Lombok** | `1.18.x` | Redução de boilerplate (`@Data`, `@Builder`, `@NoArgsConstructor`). |
 | **Maven Wrapper** | `3.9.x` | Gerenciador de dependências e build automatizado sem necessidade de instalação global do Maven. |
-| **Docker & Docker Compose** | — | Conteinerização do banco de dados PostgreSQL e PgBouncer. |
+| **Docker & Docker Compose** | latest | Conteinerização do banco de dados PostgreSQL e PgBouncer. |
 
 ---
 
@@ -169,10 +169,10 @@ A API possui **22 endpoints** estruturados. Todos utilizam o envelope padrão `A
 | `POST` | `/api/chamados/{id}/alocar` | Invoca a **Stored Procedure** (`app.sp_alocar_chamado`). Status $\rightarrow$ `ATENDIMENTO`. | `ADMIN` |
 | `PATCH`| `/api/chamados/{id}/prioridade`| Altera prioridade e aciona a **Trigger 2** no schema `audit`. | `ADMIN` |
 | `POST` | `/api/chamados/{id}/apontamentos`| Registra nota técnica de diagnóstico no chamado. | `TECNICO` ou `ADMIN` |
-| `PATCH`| `/api/chamados/{id}/fechar` | Conclui o incidente com descrição da solução (status $\rightarrow$ `FECHADO`). | `TECNICO` ou `ADMIN` |
+| `POST` | `/api/chamados/{id}/encerrar` | Encerra o incidente com descrição da solução (status $\rightarrow$ `FECHADO`). | `TECNICO` ou `ADMIN` |
 | `GET` | `/api/auditoria/prioridades`| Consulta o histórico de compliance lendo da **View 2** (`audit.vw_auditoria_prioridade`).| Todos |
 | `GET` | `/api/relatorios/sla-tecnicos`| Retorna relatório analítico consumindo a **Stored Function** (`app.fn_metricas_sla_tecnico`).| Todos |
-| `GET` | `/api/relatorios/simular-query-pesada`| Executa query de 4s para demonstrar o `statement_timeout = 3s` $\rightarrow$ `HTTP 504`.| Todos |
+| `GET` | `/api/relatorios/pesado?segundos=6` | Executa query de 6s para demonstrar o `statement_timeout = 3s` da role de leitura $\rightarrow$ `HTTP 504`. | Todos |
 
 ---
 
