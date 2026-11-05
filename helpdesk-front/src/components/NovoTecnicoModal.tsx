@@ -110,7 +110,7 @@ export default function NovoTecnicoModal({
       onCriado()
       onClose()
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao cadastrar tecnico.')
+      setErro(err instanceof ApiError ? err.message : 'Falha ao cadastrar o técnico.')
     } finally {
       setEnviando(false)
     }
@@ -132,7 +132,7 @@ export default function NovoTecnicoModal({
 
   return (
     <Modal
-      titulo="Novo tecnico"
+      titulo="Novo técnico"
       onClose={onClose}
       rodape={
         <>
@@ -149,14 +149,14 @@ export default function NovoTecnicoModal({
             disabled={enviando || (modo === 'existente' && !usuarioId)}
             className="rounded bg-primary px-5 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
           >
-            {enviando ? 'Salvando...' : 'Cadastrar tecnico'}
+            {enviando ? 'Salvando...' : 'Cadastrar técnico'}
           </button>
         </>
       }
     >
       <div className="-mt-1 mb-4 flex border-b border-line">
-        {aba('novo', 'Novo usuario')}
-        {aba('existente', 'Usuario existente')}
+        {aba('novo', 'Novo usuário')}
+        {aba('existente', 'Usuário existente')}
       </div>
 
       <form id="form-novo-tecnico" onSubmit={enviar} className="space-y-4">
@@ -181,14 +181,14 @@ export default function NovoTecnicoModal({
             </Linha>
           </>
         ) : (
-          <Linha rotulo="Usuario" obrigatorio>
+          <Linha rotulo="Usuário" obrigatorio>
             <select
               required
               value={usuarioId}
               onChange={(e) => setUsuarioId(e.target.value)}
               className={campo}
             >
-              <option value="">Selecione um usuario com perfil TECNICO</option>
+              <option value="">Selecione um usuário com perfil Técnico</option>
               {elegiveis.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.nome} ({u.email})
@@ -197,7 +197,7 @@ export default function NovoTecnicoModal({
             </select>
             {elegiveis.length === 0 && (
               <p className="mt-1 text-xs text-slate-500">
-                Nenhum usuario TECNICO sem cadastro tecnico.
+                Todos os usuários com perfil Técnico já têm cadastro técnico.
               </p>
             )}
           </Linha>
@@ -205,7 +205,7 @@ export default function NovoTecnicoModal({
 
         <hr className="border-line" />
 
-        <Linha rotulo="Matricula" obrigatorio>
+        <Linha rotulo="Matrícula" obrigatorio>
           <input required value={matricula} onChange={(e) => setMatricula(e.target.value)} className={campo} />
         </Linha>
         <Linha rotulo="Especialidade" obrigatorio>
@@ -217,7 +217,7 @@ export default function NovoTecnicoModal({
             ))}
           </select>
         </Linha>
-        <Linha rotulo="Nivel" obrigatorio>
+        <Linha rotulo="Nível" obrigatorio>
           <div className="flex gap-2">
             {NIVEIS.map((n) => (
               <button
@@ -235,7 +235,7 @@ export default function NovoTecnicoModal({
             ))}
           </div>
         </Linha>
-        <Linha rotulo="Disponivel">
+        <Linha rotulo="Disponível">
           <label className="flex items-center gap-2 pt-2 text-sm text-slate-600">
             <input type="checkbox" checked={disponivel} onChange={(e) => setDisponivel(e.target.checked)} />
             Apto a receber chamados

@@ -19,7 +19,9 @@ import type {
   Tecnico,
 } from '../api/types'
 import { useAuth } from '../auth/AuthContext'
+import { rotuloCategoria, rotuloPrioridade, rotuloStatus } from '../util/rotulos'
 import Alerta from './Alerta'
+import Carregando from './Carregando'
 import EditarChamadoModal from './EditarChamadoModal'
 import Modal from './Modal'
 
@@ -93,7 +95,7 @@ export default function DetalheChamadoModal({
       await carregar()
       onAlterado()
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Falha na operacao.')
+      setErro(e instanceof ApiError ? e.message : 'Falha na operação.')
     } finally {
       setOcupado(false)
     }
@@ -115,7 +117,7 @@ export default function DetalheChamadoModal({
       onAlterado()
       onClose()
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Falha na operacao.')
+      setErro(e instanceof ApiError ? e.message : 'Falha na operação.')
       setOcupado(false)
     }
   }
@@ -128,14 +130,14 @@ export default function DetalheChamadoModal({
     >
       <Alerta texto={erro} />
       {!chamado ? (
-        !erro && <p className="text-slate-500">Carregando...</p>
+        !erro && <Carregando />
       ) : (
         <div className="space-y-6 text-sm">
           <section className="grid grid-cols-2 gap-2 text-slate-700">
-            <p>Status: <b>{chamado.status}</b></p>
-            <p>Prioridade: <b>{chamado.prioridade}</b></p>
-            <p>Categoria: <b>{chamado.categoria}</b></p>
-            <p>Tecnico: <b>{chamado.tecnicoNome ?? '-'}</b></p>
+            <p>Status: <b>{rotuloStatus[chamado.status]}</b></p>
+            <p>Prioridade: <b>{rotuloPrioridade[chamado.prioridade]}</b></p>
+            <p>Categoria: <b>{rotuloCategoria(chamado.categoria)}</b></p>
+            <p>Técnico: <b>{chamado.tecnicoNome ?? '-'}</b></p>
             <p>Solicitante: <b>{chamado.solicitanteNome}</b> ({chamado.solicitanteSetor})</p>
             <p>Aberto em: <b>{data(chamado.dataAbertura)}</b></p>
             <p className="col-span-2 text-slate-600">{chamado.descricao}</p>
@@ -167,16 +169,16 @@ export default function DetalheChamadoModal({
             <section className="space-y-3 rounded bg-slate-50 p-3">
               <div className="flex flex-wrap gap-2">
                 <select
-                  aria-label="Tecnico"
+                  aria-label="Técnico"
                   value={tecnicoId}
                   onChange={(e) => setTecnicoId(e.target.value)}
                   className={campo}
                 >
-                  <option value="">Selecione o tecnico</option>
+                  <option value="">Selecione o técnico</option>
                   {tecnicos.map((t) => (
                     <option key={t.id} value={t.id}>
                       {t.nome}
-                      {t.disponivel ? '' : ' (indisponivel)'}
+                      {t.disponivel ? '' : ' (indisponível)'}
                     </option>
                   ))}
                 </select>
@@ -196,7 +198,7 @@ export default function DetalheChamadoModal({
                   className={campo}
                 >
                   {PRIORIDADES.map((p) => (
-                    <option key={p}>{p}</option>
+                    <option key={p} value={p}>{rotuloPrioridade[p]}</option>
                   ))}
                 </select>
                 <input
@@ -222,12 +224,13 @@ export default function DetalheChamadoModal({
           )}
 
           <section>
-            <h3 className="mb-2 font-bold text-slate-800">Historico de status</h3>
+            <h3 className="mb-2 font-bold text-slate-800">Histórico de status</h3>
             <ul className="space-y-1 text-slate-600">
               {historico.map((h) => (
                 <li key={h.id}>
-                  {data(h.dataMudanca)}: {h.statusAnterior ?? 'inicio'} para{' '}
-                  <b>{h.statusNovo}</b>
+                  {data(h.dataMudanca)}:{' '}
+                  {h.statusAnterior ? rotuloStatus[h.statusAnterior] : 'Início'} para{' '}
+                  <b>{rotuloStatus[h.statusNovo]}</b>
                 </li>
               ))}
               {historico.length === 0 && <li>Sem registros.</li>}
@@ -240,7 +243,7 @@ export default function DetalheChamadoModal({
               {apontamentos.map((a) => (
                 <li key={a.id} className="rounded bg-slate-50 p-2">
                   <p className="text-xs text-slate-400">
-                    {a.autorNome ?? 'Tecnico'} em {data(a.criadoEm)}
+                    {a.autorNome ?? 'Técnico'} em {data(a.criadoEm)}
                   </p>
                   <p>{a.descricao}</p>
                 </li>
@@ -252,7 +255,7 @@ export default function DetalheChamadoModal({
             {podeAtender && (
               <div className="mt-2 flex gap-2">
                 <input
-                  placeholder="Nova nota tecnica"
+                  placeholder="Nova nota técnica"
                   value={mensagem}
                   onChange={(e) => setMensagem(e.target.value)}
                   className={`${campo} flex-1`}
@@ -272,7 +275,7 @@ export default function DetalheChamadoModal({
 
           {chamado.status === 'ABERTO' && (
             <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-blue-700 text-xs">
-              ℹ️ Este chamado está <b>ABERTO</b> e aguarda alocação de um técnico pelo Administrador de TI para iniciar o atendimento.
+              ℹ️ Este chamado está <b>aberto</b> e aguarda alocação de um técnico pelo Administrador de TI para iniciar o atendimento.
             </div>
           )}
 
@@ -281,7 +284,7 @@ export default function DetalheChamadoModal({
               <h3 className="font-bold text-slate-800">Encerrar chamado</h3>
               <textarea
                 rows={2}
-                placeholder="Solucao aplicada"
+                placeholder="Solução aplicada"
                 value={solucao}
                 onChange={(e) => setSolucao(e.target.value)}
                 className={`${campo} w-full`}

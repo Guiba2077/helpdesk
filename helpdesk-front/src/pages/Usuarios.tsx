@@ -4,9 +4,15 @@ import type { Perfil, UsuarioLogado } from '../api/types'
 import { alternarStatusUsuario, listarUsuarios } from '../api/usuariosApi'
 import { useAuth } from '../auth/AuthContext'
 import Card from '../components/Card'
+import { LinhaEstado } from '../components/Carregando'
 import { botaoSecundario } from '../components/form'
+import Paginacao from '../components/Paginacao'
+import { usePaginacao } from '../components/usePaginacao'
 import UsuarioModal from '../components/UsuarioModal'
 import { formatarData } from '../util/formatar'
+import { rotuloPerfil } from '../util/rotulos'
+
+const COLUNAS = ['Nome', 'Setor', 'Telefone', 'Perfil', 'Situação', 'Cadastro', '']
 
 const corPerfil: Record<Perfil, string> = {
   ADMIN: 'bg-purple-100 text-purple-800',
@@ -19,9 +25,11 @@ export default function Usuarios() {
   const [usuarios, setUsuarios] = useState<UsuarioLogado[]>([])
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
+  const [alternandoId, setAlternandoId] = useState<number | null>(null)
   const [modal, setModal] = useState<{ aberto: boolean; usuario?: UsuarioLogado }>({ aberto: false })
   const [recarga, setRecarga] = useState(0)
   const recarregar = useCallback(() => setRecarga((n) => n + 1), [])
+  const pag = usePaginacao(usuarios)
 
   useEffect(() => {
     let ativo = true
@@ -32,7 +40,7 @@ export default function Usuarios() {
         setErro('')
       })
       .catch((e) => {
-        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro.')
+        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro ao carregar os usuários.')
       })
       .finally(() => {
         if (ativo) setCarregando(false)
@@ -43,11 +51,14 @@ export default function Usuarios() {
   }, [recarga])
 
   async function alternar(u: UsuarioLogado) {
+    setAlternandoId(u.id)
     try {
       await alternarStatusUsuario(u.id)
       recarregar()
     } catch (e) {
-      setErro(e instanceof ApiError ? e.message : 'Falha na operacao.')
+      setErro(e instanceof ApiError ? e.message : 'Falha na operação.')
+    } finally {
+      setAlternandoId(null)
     }
   }
 
@@ -55,14 +66,14 @@ export default function Usuarios() {
     <>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">Usuarios</h1>
-          <p className="text-xs text-slate-500">Inicio / Administracao / Usuarios</p>
+          <h1 className="text-xl font-semibold text-slate-800">Usuários</h1>
+          <p className="text-xs text-slate-500">Início / Administração / Usuários</p>
         </div>
         <button
           onClick={() => setModal({ aberto: true })}
           className="rounded bg-primary hover:bg-primary-dark text-white px-4 py-2 font-medium"
         >
-          + Novo usuario
+          + Novo usuário
         </button>
       </div>
 
@@ -77,18 +88,16 @@ export default function Usuarios() {
           <table className="w-full text-left">
             <thead className="bg-surface text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                {['Nome', 'Setor', 'Telefone', 'Perfil', 'Situacao', 'Cadastro', ''].map((h) => (
+                {COLUNAS.map((h) => (
                   <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {carregando ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Carregando...</td></tr>
-              ) : usuarios.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Nenhum usuario.</td></tr>
+              {carregando || usuarios.length === 0 ? (
+                <LinhaEstado colunas={COLUNAS.length} carregando={carregando} vazio="Nenhum usuário cadastrado." />
               ) : (
-                usuarios.map((u) => (
+                pag.itensPagina.map((u) => (
                   <tr key={u.id} className={`border-t border-line hover:bg-surface ${u.ativo === false ? 'opacity-60' : ''}`}>
                     <td className="px-4 py-3 font-medium">
                       {u.nome}
@@ -97,7 +106,7 @@ export default function Usuarios() {
                     <td className="px-4 py-3">{u.setor}</td>
                     <td className="px-4 py-3">{u.telefone ?? '-'}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded px-2 py-0.5 text-xs font-semibold ${corPerfil[u.perfil]}`}>{u.perfil}</span>
+                      <span className={`rounded px-2 py-0.5 text-xs font-semibold ${corPerfil[u.perfil]}`}>{rotuloPerfil[u.perfil]}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`rounded px-2 py-0.5 text-xs font-semibold ${u.ativo === false ? 'bg-slate-200 text-slate-600' : 'bg-green-100 text-green-800'}`}>
@@ -110,8 +119,12 @@ export default function Usuarios() {
                         Editar
                       </button>
                       {u.id !== logado?.id && (
-                        <button onClick={() => alternar(u)} className={`${botaoSecundario} py-1`}>
-                          {u.ativo === false ? 'Ativar' : 'Inativar'}
+                        <button
+                          onClick={() => alternar(u)}
+                          disabled={alternandoId !== null}
+                          className={`${botaoSecundario} py-1 disabled:opacity-60`}
+                        >
+                          {alternandoId === u.id ? 'Salvando...' : u.ativo === false ? 'Ativar' : 'Inativar'}
                         </button>
                       )}
                     </td>
@@ -121,6 +134,7 @@ export default function Usuarios() {
             </tbody>
           </table>
         </div>
+        {!carregando && <Paginacao {...pag} />}
       </Card>
 
       {modal.aberto && (

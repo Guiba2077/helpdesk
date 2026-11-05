@@ -4,23 +4,16 @@ import { ApiError } from '../api/client'
 import type { Categoria, Prioridade, UsuarioLogado } from '../api/types'
 import { listarUsuarios } from '../api/usuariosApi'
 import { useAuth } from '../auth/AuthContext'
+import { CATEGORIAS, rotuloPrioridade } from '../util/rotulos'
 import Alerta from './Alerta'
 import { campo, Linha } from './form'
 import Modal from './Modal'
 
-const CATEGORIAS: { valor: Categoria; rotulo: string }[] = [
-  { valor: 'REDE', rotulo: 'Infraestrutura e Rede' },
-  { valor: 'HARDWARE', rotulo: 'Hardware e Equipamentos' },
-  { valor: 'SOFTWARE', rotulo: 'Sistemas e Software' },
-  { valor: 'BANCO_DADOS', rotulo: 'Banco de Dados' },
-  { valor: 'ACESSO', rotulo: 'Seguranca e Permissoes de Acesso' },
-]
-
 const PRIORIDADES: { valor: Prioridade; rotulo: string; cor: string }[] = [
-  { valor: 'BAIXA', rotulo: 'Baixa', cor: 'bg-slate-500' },
-  { valor: 'MEDIA', rotulo: 'Media', cor: 'bg-sky-600' },
-  { valor: 'ALTA', rotulo: 'Alta', cor: 'bg-orange-500' },
-  { valor: 'CRITICA', rotulo: 'Critica', cor: 'bg-red-600' },
+  { valor: 'BAIXA', rotulo: rotuloPrioridade.BAIXA, cor: 'bg-slate-500' },
+  { valor: 'MEDIA', rotulo: rotuloPrioridade.MEDIA, cor: 'bg-sky-600' },
+  { valor: 'ALTA', rotulo: rotuloPrioridade.ALTA, cor: 'bg-orange-500' },
+  { valor: 'CRITICA', rotulo: rotuloPrioridade.CRITICA, cor: 'bg-red-600' },
 ]
 
 const MAX_DESCRICAO = 2000
@@ -164,7 +157,7 @@ export default function NovoChamadoModal({
           </div>
         </Linha>
 
-        <Linha rotulo="Titulo" obrigatorio>
+        <Linha rotulo="Título" obrigatorio>
           <input
             required
             maxLength={150}
@@ -175,14 +168,14 @@ export default function NovoChamadoModal({
           />
         </Linha>
 
-        <Linha rotulo="Descricao" obrigatorio>
+        <Linha rotulo="Descrição" obrigatorio>
           <textarea
             required
             rows={6}
             maxLength={MAX_DESCRICAO}
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Descreva o que acontece, quando comecou e o impacto no trabalho"
+            placeholder="Descreva o que acontece, quando começou e o impacto no trabalho"
             className={campo}
           />
           <p className="mt-1 text-right text-xs text-slate-400">

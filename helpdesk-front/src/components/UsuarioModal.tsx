@@ -8,7 +8,7 @@ import Modal from './Modal'
 
 const PERFIS: { valor: Perfil; rotulo: string }[] = [
   { valor: 'OPERADOR', rotulo: 'Operador (abre chamados)' },
-  { valor: 'TECNICO', rotulo: 'Tecnico (atende chamados)' },
+  { valor: 'TECNICO', rotulo: 'Técnico (atende chamados)' },
   { valor: 'ADMIN', rotulo: 'Administrador (acesso total)' },
 ]
 
@@ -48,7 +48,7 @@ export default function UsuarioModal({
       onSalvo()
       onClose()
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao salvar usuario.')
+      setErro(err instanceof ApiError ? err.message : 'Falha ao salvar o usuário.')
     } finally {
       setEnviando(false)
     }
@@ -56,7 +56,7 @@ export default function UsuarioModal({
 
   return (
     <Modal
-      titulo={edicao ? 'Editar usuario' : 'Novo usuario'}
+      titulo={edicao ? 'Editar usuário' : 'Novo usuário'}
       onClose={onClose}
       rodape={
         <>

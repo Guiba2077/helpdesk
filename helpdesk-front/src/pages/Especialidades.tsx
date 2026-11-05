@@ -4,6 +4,7 @@ import { criarEspecialidade, listarEspecialidades } from '../api/tecnicosApi'
 import type { Especialidade, NivelAtendimento } from '../api/types'
 import Alerta from '../components/Alerta'
 import Card from '../components/Card'
+import { LinhaEstado } from '../components/Carregando'
 import { botaoPrimario, botaoSecundario, campo, Linha } from '../components/form'
 import Modal from '../components/Modal'
 
@@ -31,7 +32,7 @@ function NovaEspecialidadeModal({ onClose, onCriada }: { onClose: () => void; on
       onCriada()
       onClose()
     } catch (err) {
-      setErro(err instanceof ApiError ? err.message : 'Falha ao salvar.')
+      setErro(err instanceof ApiError ? err.message : 'Falha ao salvar a especialidade.')
     } finally {
       setEnviando(false)
     }
@@ -52,13 +53,13 @@ function NovaEspecialidadeModal({ onClose, onCriada }: { onClose: () => void; on
     >
       <form id="form-especialidade" onSubmit={enviar} className="space-y-4">
         <Alerta texto={erro} />
-        <Linha rotulo="Codigo" obrigatorio>
+        <Linha rotulo="Código" obrigatorio>
           <input required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="CLOUD_DEVOPS" className={campo} />
         </Linha>
         <Linha rotulo="Nome" obrigatorio>
           <input required value={nome} onChange={(e) => setNome(e.target.value)} className={campo} />
         </Linha>
-        <Linha rotulo="Nivel padrao" obrigatorio>
+        <Linha rotulo="Nível padrão" obrigatorio>
           <div className="flex gap-2">
             {NIVEIS.map((n) => (
               <button
@@ -72,7 +73,7 @@ function NovaEspecialidadeModal({ onClose, onCriada }: { onClose: () => void; on
             ))}
           </div>
         </Linha>
-        <Linha rotulo="Descricao">
+        <Linha rotulo="Descrição">
           <textarea rows={3} value={descricao} onChange={(e) => setDescricao(e.target.value)} className={campo} />
         </Linha>
       </form>
@@ -97,7 +98,7 @@ export default function Especialidades() {
         setErro('')
       })
       .catch((e) => {
-        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro.')
+        if (ativo) setErro(e instanceof ApiError ? e.message : 'Erro ao carregar as especialidades.')
       })
       .finally(() => {
         if (ativo) setCarregando(false)
@@ -112,7 +113,7 @@ export default function Especialidades() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold text-slate-800">Especialidades</h1>
-          <p className="text-xs text-slate-500">Inicio / Administracao / Especialidades</p>
+          <p className="text-xs text-slate-500">Início / Administração / Especialidades</p>
         </div>
         <button onClick={() => setNovo(true)} className="rounded bg-primary hover:bg-primary-dark text-white px-4 py-2 font-medium">
           + Nova especialidade
@@ -123,21 +124,19 @@ export default function Especialidades() {
         <div role="alert" className="mb-4 rounded border border-red-200 bg-red-50 text-red-700 px-3 py-2">{erro}</div>
       )}
 
-      <Card titulo="Areas de atuacao tecnica">
+      <Card titulo="Áreas de atuação técnica">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                {['Codigo', 'Nome', 'Nivel padrao'].map((h) => (
+                {['Código', 'Nome', 'Nível padrão'].map((h) => (
                   <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {carregando ? (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Carregando...</td></tr>
-              ) : lista.length === 0 ? (
-                <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Nenhuma especialidade.</td></tr>
+              {carregando || lista.length === 0 ? (
+                <LinhaEstado colunas={3} carregando={carregando} vazio="Nenhuma especialidade cadastrada." />
               ) : (
                 lista.map((e) => (
                   <tr key={e.codigo} className="border-t border-line hover:bg-surface">

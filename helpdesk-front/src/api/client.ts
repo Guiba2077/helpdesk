@@ -19,9 +19,9 @@ export class ApiError extends Error {
 function mensagemPadrao(status: number): string {
   switch (status) {
     case 400:
-      return 'Dados invalidos ou campos obrigatorios ausentes.'
+      return 'Dados inválidos ou campos obrigatórios ausentes.'
     case 401:
-      return 'E-mail ou senha invalidos.'
+      return 'E-mail ou senha inválidos.'
     case 504:
       return 'A consulta excedeu o tempo limite configurado no PostgreSQL (statement_timeout = 3s).'
     default:
@@ -47,7 +47,7 @@ export async function apiRequest<T>(
   try {
     response = await fetch(`${API_URL}${endpoint}`, { ...options, headers })
   } catch {
-    throw new ApiError('Nao foi possivel conectar ao servidor.', 0)
+    throw new ApiError('Não foi possível conectar ao servidor.', 0)
   }
 
   const body = (await response.json().catch(() => null)) as
