@@ -351,7 +351,7 @@ Especificidades do G3:
 | Exigência | Como aparece |
 |---|---|
 | Trigger de histórico de status | Detalhe do chamado mostra a linha do tempo ABERTO, ATENDIMENTO, FECHADO com o responsável |
-| `statement_timeout` curto | Tela SLA e tuning: botão de consulta pesada volta HTTP 504 em 3 segundos |
+| `statement_timeout` curto | Configurado na role `rl_leitor` (`3s`) e no `postgresql.conf` (`10s`), demonstrado via terminal (`psql`) |
 | Auditoria de prioridade | Tela Auditoria lista prioridade anterior e nova, quem alterou e a justificativa |
 
 ## 8. Como demonstrar os recursos do banco
