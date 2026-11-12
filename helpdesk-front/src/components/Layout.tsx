@@ -46,7 +46,7 @@ const grupos: { titulo: string; itens: Item[] }[] = [
   {
     titulo: 'Relatórios',
     itens: [
-      { to: '/relatorios', rotulo: 'SLA e tuning', icone: <Icone d="M4 20V10M10 20V4M16 20v-7M22 20H2" /> },
+      { to: '/relatorios', rotulo: 'SLA', icone: <Icone d="M4 20V10M10 20V4M16 20v-7M22 20H2" /> },
       { to: '/auditoria', rotulo: 'Auditoria', icone: <Icone d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" /> },
     ],
   },
